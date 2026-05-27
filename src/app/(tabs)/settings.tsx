@@ -1,33 +1,28 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  User,
   Shield,
-  Bell,
-  Palette,
   Wifi,
+  CircleUser,
   CircleHelp as HelpCircle,
   ChevronRight,
   LogOut,
-  ArrowLeft,
+  Moon,
+  Bell,
 } from 'lucide-react-native';
 
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Header } from '../../components/Header';
+import { LinearGradient } from '../../components/LinearGradient';
+import { useTheme } from '../../context/ThemeContext';
 
 const settingsSections = [
   {
     title: 'Account',
     items: [
-      { icon: User, label: 'Profile', color: '#3B82F6' },
+      { icon: CircleUser, label: 'Profile', color: '#3B82F6' },
       { icon: Shield, label: 'Privacy & Security', color: '#8B5CF6' },
-    ],
-  },
-  {
-    title: 'Preferences',
-    items: [
-      { icon: Bell, label: 'Notifications', color: '#F59E0B' },
-      { icon: Palette, label: 'Appearance', color: '#EC4899' },
     ],
   },
   {
@@ -41,38 +36,60 @@ const settingsSections = [
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const [refreshing, setRefreshing] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const [notifications, setNotifications] = useState(true);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/(tabs)')}>
-            <ArrowLeft size={22} color="#0F172A" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Settings</Text>
-          <View style={styles.backBtn} />
-        </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Header title="Settings" showBack />
 
         {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.profileAvatar}>
-            <User size={28} color="#FFFFFF" />
-          </View>
+        <TouchableOpacity style={[styles.profileCard, { backgroundColor: theme.surface }]} activeOpacity={0.7}>
+          <LinearGradient colors={[theme.gradientStart, theme.gradientEnd]} style={styles.profileAvatar}>
+            <Text style={styles.profileInitials}>HU</Text>
+          </LinearGradient>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Home User</Text>
-            <Text style={styles.profileEmail}>user@talk2home</Text>
+            <Text style={[styles.profileName, { color: theme.text }]}>Home User</Text>
+            <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>user@talk2home</Text>
+          </View>
+          <ChevronRight size={20} color={theme.textTertiary} />
+        </TouchableOpacity>
+
+        {/* Quick Settings */}
+        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Quick Settings</Text>
+        <View style={[styles.toggleCard, { backgroundColor: theme.surface }]}>
+          <View style={styles.toggleRow}>
+            <View style={[styles.toggleIcon, { backgroundColor: theme.accent + '20' }]}>
+              <Moon size={20} color={theme.accent} />
+            </View>
+            <Text style={[styles.toggleLabel, { color: theme.text }]}>Dark Mode</Text>
+            <Switch
+              value={theme.isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#CBD5E1', true: theme.accent + '60' }}
+              thumbColor={theme.isDark ? theme.accent : '#F1F5F9'}
+            />
+          </View>
+          <View style={[styles.toggleDivider, { backgroundColor: theme.border }]} />
+          <View style={styles.toggleRow}>
+            <View style={[styles.toggleIcon, { backgroundColor: '#F59E0B20' }]}>
+              <Bell size={20} color="#F59E0B" />
+            </View>
+            <Text style={[styles.toggleLabel, { color: theme.text }]}>Notifications</Text>
+            <Switch
+              value={notifications}
+              onValueChange={setNotifications}
+              trackColor={{ false: '#CBD5E1', true: '#F59E0B60' }}
+              thumbColor={notifications ? '#F59E0B' : '#F1F5F9'}
+            />
           </View>
         </View>
 
         {settingsSections.map((section, sIndex) => (
           <View key={sIndex} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionCard}>
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>{section.title}</Text>
+            <View style={[styles.sectionCard, { backgroundColor: theme.surface }]}>
               {section.items.map((item, iIndex) => {
                 const Icon = item.icon;
                 return (
@@ -80,14 +97,20 @@ export default function SettingsScreen() {
                     key={iIndex}
                     style={[
                       styles.settingsItem,
-                      iIndex < section.items.length - 1 && styles.settingsItemBorder,
+                      iIndex < section.items.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border },
                     ]}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      if (item.label === 'Help & Support') {
+                        router.push('/help');
+                      }
+                    }}
                   >
                     <View style={[styles.settingsIcon, { backgroundColor: item.color + '15' }]}>
                       <Icon size={18} color={item.color} />
                     </View>
-                    <Text style={styles.settingsLabel}>{item.label}</Text>
-                    <ChevronRight size={18} color="#CBD5E1" />
+                    <Text style={[styles.settingsLabel, { color: theme.text }]}>{item.label}</Text>
+                    <ChevronRight size={18} color={theme.textTertiary} />
                   </TouchableOpacity>
                 );
               })}
@@ -95,12 +118,16 @@ export default function SettingsScreen() {
           </View>
         ))}
 
-        <TouchableOpacity style={styles.logoutBtn}>
-          <LogOut size={18} color="#EF4444" />
-          <Text style={styles.logoutText}>Sign Out</Text>
+        <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: theme.dangerBg, borderColor: theme.dangerBorder }]} activeOpacity={0.7}>
+          <View style={[styles.logoutIcon, { backgroundColor: theme.dangerBorder }]}>
+            <LogOut size={18} color={theme.danger} />
+          </View>
+          <Text style={[styles.logoutText, { color: theme.danger }]}>Sign Out</Text>
         </TouchableOpacity>
 
-        <View style={{ height: 100 }} />
+        <Text style={[styles.version, { color: theme.textTertiary }]}>Talk2Home v1.0.0</Text>
+
+        <View style={{ height: 60 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -109,59 +136,41 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#EAF0F6',
   },
   content: {
     paddingHorizontal: 20,
     paddingTop: 8,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1E3A5F',
-  },
-
   /* Profile Card */
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     padding: 18,
-    borderRadius: 20,
-    marginBottom: 28,
+    borderRadius: 22,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   profileAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: '#268EBA',
+    width: 56,
+    height: 56,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    shadowColor: '#268EBA',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  profileInitials: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   profileInfo: {
     flex: 1,
@@ -169,14 +178,44 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#1E3A5F',
-    marginBottom: 2,
+    marginBottom: 3,
   },
   profileEmail: {
     fontSize: 13,
-    color: '#64748B',
   },
-
+  /* Quick Settings Toggle Card */
+  toggleCard: {
+    borderRadius: 18,
+    marginBottom: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+    overflow: 'hidden',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  toggleIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  toggleLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  toggleDivider: {
+    height: 1,
+    marginHorizontal: 16,
+  },
   /* Sections */
   section: {
     marginBottom: 24,
@@ -184,14 +223,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#94A3B8',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 10,
     marginLeft: 4,
   },
   sectionCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -205,10 +242,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
-  settingsItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
   settingsIcon: {
     width: 36,
     height: 36,
@@ -221,23 +254,32 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#1E3A5F',
   },
-
   /* Logout */
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
     padding: 16,
-    backgroundColor: '#FEF2F2',
     borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+  },
+  logoutIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logoutText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#EF4444',
+  },
+  version: {
+    textAlign: 'center',
+    fontSize: 12,
+    letterSpacing: 0.3,
   },
 });

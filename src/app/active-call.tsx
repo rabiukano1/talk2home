@@ -1,21 +1,22 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, RefreshControl } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Mic, MicOff, Volume2, PhoneOff, Grid as Keypad, ArrowLeft } from 'lucide-react-native';
+import { LinearGradient } from '../components/LinearGradient';
+import { Mic, MicOff, Volume2, VolumeX, PhoneOff, ArrowLeft } from 'lucide-react-native';
+import { useAudio } from '../context/AudioContext';
+import { playEndTone, stopSound } from '../utils/sounds';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function ActiveCallScreen() {
   const router = useRouter();
   const { name, phone } = useLocalSearchParams();
-  const [isMuted, setIsMuted] = useState(false);
-  const [isSpeaker, setIsSpeaker] = useState(false);
+  const { isMuted, isSpeaker, toggleMute, toggleSpeaker, startCallAudio, stopCallAudio } = useAudio();
   const [duration, setDuration] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
-
-  // Format duration as mm:ss
+  const endedRef = useRef(false);
+  const { theme } = useTheme();
   const formatDuration = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
@@ -23,19 +24,23 @@ export default function ActiveCallScreen() {
   };
 
   useEffect(() => {
+    startCallAudio();
     const interval = setInterval(() => {
       setDuration((prev) => prev + 1);
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (!endedRef.current) {
+        stopCallAudio();
+      }
+    };
   }, []);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
-
   const handleEndCall = () => {
-    router.back();
+    endedRef.current = true;
+    playEndTone();
+    stopCallAudio();
+    setTimeout(() => router.back(), 500);
   };
 
   const contactName = name ? String(name) : 'Unknown';
@@ -44,67 +49,63 @@ export default function ActiveCallScreen() {
 
   return (
     <LinearGradient
-      colors={['#1E3A5F', '#172C46', '#0B1B33']}
+      colors={theme.isDark ? ['#0B1121', '#0F172A', '#1E293B'] : ['#1E3A5F', '#172C46', '#0B1B33']}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />}
-        >
+        <View style={styles.wrapper}>
           {/* Back Button */}
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#FFFFFF" />
+          </TouchableOpacity>
 
-        {/* Caller Info */}
-        <View style={styles.callerInfo}>
-          <View style={styles.avatarContainer}>
-            <LinearGradient
-              colors={['#268EBA', '#1E3A5F']}
-              style={styles.avatarGradient}
-            >
-              <Text style={styles.avatarText}>{initial}</Text>
-            </LinearGradient>
+          {/* Caller Info */}
+          <View style={styles.callerInfo}>
+            <View style={styles.avatarContainer}>
+              <LinearGradient
+                colors={['#268EBA', '#1E3A5F']}
+                style={styles.avatarGradient}
+              >
+                <Text style={styles.avatarText}>{initial}</Text>
+              </LinearGradient>
+            </View>
+            <Text style={styles.nameText}>{contactName}</Text>
+            <Text style={styles.statusText}>{formatDuration(duration)}</Text>
+            <Text style={[styles.phoneText, { color: theme.textTertiary }]}>{contactPhone}</Text>
           </View>
-          <Text style={styles.nameText}>{contactName}</Text>
-          <Text style={styles.statusText}>{formatDuration(duration)}</Text>
-          <Text style={styles.phoneText}>{contactPhone}</Text>
+
+          {/* Controls */}
+          <View style={styles.controlsContainer}>
+            <View style={styles.controlsRow}>
+              <TouchableOpacity
+                style={[styles.controlBtn, isMuted && styles.controlBtnActive]}
+                onPress={toggleMute}
+              >
+                {isMuted ? <MicOff size={28} color="#EF4444" /> : <Mic size={28} color="#FFFFFF" />}
+                <Text style={[styles.controlLabel, isMuted && { color: '#EF4444' }]}>
+                  {isMuted ? 'Muted' : 'Mute'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.controlBtn, isSpeaker && styles.controlBtnActive]}
+                onPress={toggleSpeaker}
+              >
+                {isSpeaker ? <Volume2 size={28} color="#34D399" /> : <VolumeX size={28} color="#FFFFFF" />}
+                <Text style={[styles.controlLabel, isSpeaker && { color: '#34D399' }]}>
+                  {isSpeaker ? 'Speaker' : 'Earpiece'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* End Call Button */}
+            <View style={styles.endCallContainer}>
+              <TouchableOpacity style={styles.endCallBtn} onPress={handleEndCall}>
+                <PhoneOff size={32} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-
-        {/* Controls */}
-        <View style={styles.controlsContainer}>
-          <View style={styles.controlsRow}>
-            <TouchableOpacity 
-              style={[styles.controlBtn, isMuted && styles.controlBtnActive]}
-              onPress={() => setIsMuted(!isMuted)}
-            >
-              {isMuted ? <MicOff size={28} color="#FFFFFF" /> : <Mic size={28} color="#FFFFFF" />}
-              <Text style={styles.controlLabel}>{isMuted ? 'Muted' : 'Mute'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.controlBtn}>
-              <Keypad size={28} color="#FFFFFF" />
-              <Text style={styles.controlLabel}>Keypad</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.controlBtn, isSpeaker && styles.controlBtnActive]}
-              onPress={() => setIsSpeaker(!isSpeaker)}
-            >
-              <Volume2 size={28} color="#FFFFFF" />
-              <Text style={styles.controlLabel}>{isSpeaker ? 'Speaker' : 'Audio'}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* End Call Button */}
-          <View style={styles.endCallContainer}>
-            <TouchableOpacity style={styles.endCallBtn} onPress={handleEndCall}>
-              <PhoneOff size={32} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        </View>
-        </ScrollView>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -117,8 +118,8 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  scrollContent: {
-    flexGrow: 1,
+  wrapper: {
+    flex: 1,
     justifyContent: 'space-between',
   },
   backBtn: {
@@ -171,7 +172,6 @@ const styles = StyleSheet.create({
   },
   phoneText: {
     fontSize: 16,
-    color: '#94A3B8',
   },
   controlsContainer: {
     paddingBottom: 50,
@@ -179,20 +179,20 @@ const styles = StyleSheet.create({
   },
   controlsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     marginBottom: 40,
   },
   controlBtn: {
-    width: width * 0.2,
-    height: width * 0.2,
-    borderRadius: (width * 0.2) / 2,
+    width: width * 0.22,
+    height: width * 0.22,
+    borderRadius: (width * 0.22) / 2,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   controlBtnActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   controlLabel: {
     color: '#FFFFFF',

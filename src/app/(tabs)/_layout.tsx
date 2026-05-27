@@ -1,17 +1,36 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Phone, Users, Settings, Plus } from 'lucide-react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#1E3A5F',
-        tabBarInactiveTintColor: '#94A3B8',
+        tabBarStyle: {
+          backgroundColor: theme.tabBar,
+          borderTopWidth: 0,
+          elevation: 20,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          height: 65 + Math.max(insets.bottom, 16),
+          paddingTop: 8,
+          paddingBottom: Math.max(insets.bottom, 16),
+        },
+        tabBarActiveTintColor: theme.tabBarActive,
+        tabBarInactiveTintColor: theme.tabBarInactive,
         tabBarShowLabel: true,
-        tabBarLabelStyle: styles.tabLabel,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
       }}
     >
       <Tabs.Screen
@@ -37,11 +56,11 @@ export default function TabLayout() {
               width: 48,
               height: 48,
               borderRadius: 24,
-              backgroundColor: '#268EBA',
+              backgroundColor: theme.accent,
               justifyContent: 'center',
               alignItems: 'center',
               marginBottom: 16,
-              shadowColor: '#268EBA',
+              shadowColor: theme.accent,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
@@ -70,22 +89,3 @@ export default function TabLayout() {
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 0,
-    elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    height: 85,
-    paddingBottom: 25,
-    paddingTop: 8,
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-});

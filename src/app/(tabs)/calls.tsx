@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, ArrowLeft } from 'lucide-react-native';
+import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Header } from '../../components/Header';
+import { useTheme } from '../../context/ThemeContext';
 
 const recentCalls = [
   { name: 'Dad', type: 'missed', time: '2:15 PM', icon: PhoneMissed, color: '#EF4444' },
@@ -14,30 +15,19 @@ const recentCalls = [
 
 export default function CallsScreen() {
   const router = useRouter();
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+  const { theme } = useTheme();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/(tabs)')}>
-            <ArrowLeft size={22} color="#0F172A" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Calls</Text>
-          <View style={styles.backBtn} />
-        </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Header title="Calls" showBack />
 
         {recentCalls.map((call, index) => {
           const Icon = call.icon;
           return (
             <TouchableOpacity 
               key={index} 
-              style={styles.callItem}
+              style={[styles.callItem, { backgroundColor: theme.surface }]}
               onPress={() => router.push({ 
                 pathname: '/active-call', 
                 params: { name: call.name, phone: 'Unknown' } 
@@ -47,11 +37,13 @@ export default function CallsScreen() {
                 <Icon size={18} color={call.color} />
               </View>
               <View style={styles.callInfo}>
-                <Text style={styles.callName}>{call.name}</Text>
-                <Text style={styles.callType}>{call.type.charAt(0).toUpperCase() + call.type.slice(1)}</Text>
+                <Text style={[styles.callName, { color: theme.text }]}>{call.name}</Text>
+                <Text style={[styles.callType, { color: theme.textSecondary }]}>
+                  {call.type.charAt(0).toUpperCase() + call.type.slice(1)}
+                </Text>
               </View>
-              <Text style={styles.callTime}>{call.time}</Text>
-              <Phone size={18} color="#0D9488" />
+              <Text style={[styles.callTime, { color: theme.textTertiary }]}>{call.time}</Text>
+              <Phone size={18} color={theme.accent} />
             </TouchableOpacity>
           );
         })}
@@ -65,40 +57,14 @@ export default function CallsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#EAF0F6',
   },
   content: {
     paddingHorizontal: 20,
     paddingTop: 8,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1E3A5F',
-  },
   callItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     padding: 16,
     borderRadius: 16,
     marginBottom: 10,
@@ -122,16 +88,13 @@ const styles = StyleSheet.create({
   callName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1E3A5F',
     marginBottom: 2,
   },
   callType: {
     fontSize: 12,
-    color: '#64748B',
   },
   callTime: {
     fontSize: 13,
-    color: '#94A3B8',
     marginRight: 12,
   },
 });

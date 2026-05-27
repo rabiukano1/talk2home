@@ -1,51 +1,41 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Phone, UserPlus, ArrowLeft } from 'lucide-react-native';
+import { Search, Phone } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { useContacts } from '../../context/ContactsContext';
+import { Header } from '../../components/Header';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ContactsScreen() {
   const router = useRouter();
   const { contacts } = useContacts();
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+  const { theme } = useTheme();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
       <View style={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.push('/(tabs)')}>
-            <ArrowLeft size={22} color="#0F172A" />
-          </TouchableOpacity>
-          <Text style={styles.title}>Contacts</Text>
-          <View style={styles.backBtn} />
-        </View>
+        <Header title="Contacts" showBack />
 
-        <View style={styles.searchContainer}>
-          <Search size={18} color="#94A3B8" />
+        <View style={[styles.searchContainer, { backgroundColor: theme.surface }]}>
+          <Search size={18} color={theme.textTertiary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.text }]}
             placeholder="Search contacts"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={theme.textTertiary}
           />
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <ScrollView showsVerticalScrollIndicator={false}>
           {contacts.map((contact, index) => (
-            <View key={index} style={styles.contactItem}>
+            <View key={index} style={[styles.contactItem, { backgroundColor: theme.surface }]}>
               <View style={[styles.avatar, { backgroundColor: contact.color + '20' }]}>
                 <Text style={[styles.avatarText, { color: contact.color }]}>
                   {contact.name.charAt(0)}
                 </Text>
               </View>
               <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>{contact.name}</Text>
-                <Text style={styles.contactPhone}>{contact.phone}</Text>
+                <Text style={[styles.contactName, { color: theme.text }]}>{contact.name}</Text>
+                <Text style={[styles.contactPhone, { color: theme.textTertiary }]}>{contact.phone}</Text>
               </View>
               <TouchableOpacity 
                 style={styles.actionBtn}
@@ -54,7 +44,7 @@ export default function ContactsScreen() {
                   params: { name: contact.name, phone: contact.phone } 
                 })}
               >
-                <Phone size={18} color="#268EBA" />
+                <Phone size={18} color={theme.accent} />
               </TouchableOpacity>
             </View>
           ))}
@@ -68,54 +58,15 @@ export default function ContactsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#EAF0F6',
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 8,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1E3A5F',
-  },
-  addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 14,
     paddingHorizontal: 14,
     height: 46,
@@ -130,12 +81,10 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: '#0F172A',
   },
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     padding: 14,
     borderRadius: 16,
     marginBottom: 8,
@@ -163,12 +112,10 @@ const styles = StyleSheet.create({
   contactName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1E3A5F',
     marginBottom: 2,
   },
   contactPhone: {
     fontSize: 12,
-    color: '#94A3B8',
   },
   actionBtn: {
     width: 36,
