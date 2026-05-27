@@ -10,6 +10,7 @@ import {
   Platform,
   Animated,
   Easing,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,13 +18,15 @@ import {
   Send,
   Bot,
   User,
-  CircleHelp as HelpCircle,
+  ArrowLeft,
   Trash2,
   Sparkles,
   ThumbsUp,
   ThumbsDown,
+  MessageCircle,
 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
+import { LinearGradient } from '../components/LinearGradient';
 
 interface Message {
   id: string;
@@ -223,6 +226,7 @@ export default function HelpScreen() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, 'up' | 'down' | null>>({});
+  const [refreshing, setRefreshing] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([
     { label: 'Make a call', topic: 'call' },
     { label: 'Add a contact', topic: 'add contact' },
@@ -257,6 +261,26 @@ export default function HelpScreen() {
       setIsTyping(false);
       setSuggestions(getSuggestions(trimmed));
     }, 800);
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setMessages([
+      {
+        id: Date.now().toString(),
+        role: 'bot',
+        text: 'Chat refreshed. How can I help you?',
+        time: now(),
+      },
+    ]);
+    setSuggestions([
+      { label: 'Make a call', topic: 'call' },
+      { label: 'Add a contact', topic: 'add contact' },
+      { label: 'Smart Gateway', topic: 'gateway' },
+      { label: 'Troubleshooting', topic: 'troubleshooting' },
+    ]);
+    setFeedback({});
+    setTimeout(() => setRefreshing(false), 400);
   };
 
   const handleClear = () => {
@@ -342,23 +366,34 @@ export default function HelpScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        behavior="padding"
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
         {/* Header */}
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <TouchableOpacity style={[styles.backBtn, { backgroundColor: theme.surface }]} onPress={() => router.back()}>
-            <HelpCircle size={22} color={theme.text} />
-          </TouchableOpacity>
-          <View style={styles.headerInfo}>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>Help & Support</Text>
-            <Text style={[styles.headerSub, { color: theme.textTertiary }]}>
-              {isTyping ? 'Typing...' : 'Online'}
-            </Text>
+        <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+          <LinearGradient colors={[theme.gradientStart, theme.gradientEnd]} style={styles.headerAccent} />
+          <View style={styles.headerRow}>
+            <TouchableOpacity style={[styles.backBtn, { backgroundColor: theme.background }]} onPress={() => router.back()}>
+              <ArrowLeft size={22} color={theme.text} />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <View style={[styles.headerIconWrap, { backgroundColor: theme.accent + '15' }]}>
+                <MessageCircle size={18} color={theme.accent} />
+              </View>
+              <View style={styles.headerInfo}>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>Help & Support</Text>
+                <View style={styles.headerStatus}>
+                  <View style={[styles.statusDot, { backgroundColor: isTyping ? '#F59E0B' : '#34D399' }]} />
+                  <Text style={[styles.headerSub, { color: theme.textTertiary }]}>
+                    {isTyping ? 'Typing...' : 'Online'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity style={[styles.clearBtn, { backgroundColor: theme.background }]} onPress={handleClear}>
+              <Trash2 size={18} color={theme.textTertiary} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={[styles.clearBtn, { backgroundColor: theme.surface }]} onPress={handleClear}>
-            <Trash2 size={18} color={theme.textTertiary} />
-          </TouchableOpacity>
         </View>
 
         {/* Messages */}
@@ -369,6 +404,7 @@ export default function HelpScreen() {
           renderItem={renderMessage}
           contentContainerStyle={styles.listContent}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.textTertiary} />}
           ListFooterComponent={
             <View style={styles.footer}>
               {isTyping && (
@@ -414,6 +450,7 @@ export default function HelpScreen() {
             onChangeText={setInput}
             onSubmitEditing={() => sendMessage(input)}
             returnKeyType="send"
+            autoFocus
           />
           <TouchableOpacity
             style={[styles.sendBtn, { backgroundColor: input.trim() ? theme.accent : theme.border }]}
@@ -436,11 +473,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    borderBottomWidth: 1,
+    position: 'relative',
+  },
+  headerAccent: {
+    height: 3,
+    width: '100%',
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   backBtn: {
     width: 40,
@@ -450,6 +494,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerInfo: {
     flex: 1,
   },
@@ -457,10 +514,20 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
   },
+  headerStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 1,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
   headerSub: {
     fontSize: 12,
     fontWeight: '500',
-    marginTop: 1,
   },
   clearBtn: {
     width: 40,
@@ -468,11 +535,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 4,
   },
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 100,
+    paddingBottom: 140,
   },
   footer: {
     gap: 4,
@@ -505,10 +573,10 @@ const styles = StyleSheet.create({
   botBubble: {
     borderBottomLeftRadius: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   userBubble: {
     borderBottomRightRadius: 4,
@@ -539,18 +607,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   suggestionsWrap: {
-    marginTop: 8,
-    marginLeft: 48,
+    marginTop: 12,
+    marginBottom: 4,
   },
   suggestionsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 10,
+    paddingHorizontal: 4,
   },
   suggestionsLabel: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   quickRow: {
     flexDirection: 'row',
@@ -558,14 +628,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quickChip: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
   },
   quickText: {
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -574,19 +644,25 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     gap: 8,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
   },
   input: {
     flex: 1,
-    height: 44,
-    borderRadius: 22,
+    height: 46,
+    borderRadius: 23,
     paddingHorizontal: 18,
     fontSize: 15,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
