@@ -3,6 +3,9 @@ import { StatusBar } from 'expo-status-bar';
 import { ContactsProvider } from '../context/ContactsContext';
 import { AudioProvider } from '../context/AudioContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import { UserProvider } from '../context/UserContext';
+import { BillingProvider } from '../context/BillingContext';
+import { WalletProvider } from '../context/WalletContext';
 
 function RootLayoutInner() {
   const { theme } = useTheme();
@@ -18,9 +21,15 @@ export default function RootLayout() {
   return (
     <AudioProvider>
       <ContactsProvider>
-        <ThemeProvider>
-          <RootLayoutInner />
-        </ThemeProvider>
+        <UserProvider>
+          <BillingProvider>
+            <WalletProvider>
+            <ThemeProvider>
+              <RootLayoutInner />
+            </ThemeProvider>
+            </WalletProvider>
+          </BillingProvider>
+        </UserProvider>
       </ContactsProvider>
     </AudioProvider>
   );

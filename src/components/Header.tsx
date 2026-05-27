@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { LinearGradient } from './LinearGradient';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 
 interface HeaderProps {
   title?: string;
@@ -14,6 +15,14 @@ interface HeaderProps {
 export function Header({ title, showBack, showProfile, showLogo = true }: HeaderProps) {
   const router = useRouter();
   const { theme } = useTheme();
+  const { user } = useUser();
+
+  const initials = user.name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <View style={[styles.header, { marginBottom: 24 }]}>
@@ -42,7 +51,7 @@ export function Header({ title, showBack, showProfile, showLogo = true }: Header
       {showProfile && (
         <TouchableOpacity onPress={() => router.push('/(tabs)/settings')}>
           <LinearGradient colors={[theme.gradientStart, theme.gradientEnd]} style={styles.profileBtn}>
-            <Text style={styles.profileInitials}>HU</Text>
+            <Text style={styles.profileInitials}>{initials}</Text>
           </LinearGradient>
         </TouchableOpacity>
       )}

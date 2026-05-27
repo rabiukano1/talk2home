@@ -11,8 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from '../../components/LinearGradient';
 import { Header } from '../../components/Header';
 import { useRouter } from 'expo-router';
-import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Wifi } from 'lucide-react-native';
+import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Wifi, Wallet, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useWallet } from '../../context/WalletContext';
 
 const recentCalls = [
   { name: 'Mom', type: 'incoming', time: '2 min ago', duration: '1:23' },
@@ -32,6 +33,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme();
+  const { balance, currency } = useWallet();
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -63,22 +65,20 @@ export default function HomeScreen() {
             <Wifi color="#99F6E4" size={20} />
           </View>
           <Text style={styles.heroTitle}>Smart Gateway</Text>
-          <View style={styles.heroMetrics}>
-            <View style={styles.heroMetric}>
-              <Text style={styles.heroMetricValue}>6</Text>
-              <Text style={styles.heroMetricLabel}>Devices</Text>
+          <TouchableOpacity
+            style={styles.heroMetrics}
+            onPress={() => router.push('/wallet' as any)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.walletIconWrap}>
+              <Wallet size={18} color="#FFFFFF" />
             </View>
-            <View style={styles.heroDivider} />
-            <View style={styles.heroMetric}>
-              <Text style={styles.heroMetricValue}>24°C</Text>
-              <Text style={styles.heroMetricLabel}>Indoor</Text>
+            <View style={styles.walletInfo}>
+              <Text style={styles.walletLabel}>Wallet Balance</Text>
+              <Text style={styles.walletValue}>{currency.symbol}{balance.toLocaleString()}</Text>
             </View>
-            <View style={styles.heroDivider} />
-            <View style={styles.heroMetric}>
-              <Text style={styles.heroMetricValue}>3</Text>
-              <Text style={styles.heroMetricLabel}>Active</Text>
-            </View>
-          </View>
+            <ChevronRight size={18} color="rgba(255,255,255,0.5)" />
+          </TouchableOpacity>
         </LinearGradient>
 
         {/* Recent Calls */}
@@ -178,26 +178,28 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
-  heroMetric: {
-    flex: 1,
+  walletIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 14,
   },
-  heroMetricValue: {
+  walletInfo: { flex: 1 },
+  walletLabel: {
+    color: '#99F6E4',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  walletValue: {
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '800',
   },
-  heroMetricLabel: {
-    color: '#99F6E4',
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  heroDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
